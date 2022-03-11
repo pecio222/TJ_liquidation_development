@@ -14,7 +14,7 @@ import time
 def swap(amount_avax, to_token, account, web3):
     #account = get_account()
     
-    print(f"amount of avax to wavax: {amount_avax}")
+    print(f"amount of avax to exchange: {amount_avax}")
     amount_avax = amount_avax * 10 ** 18
     #ADRESY ERC20
     WAVAXadress = config['addresses']['TOKENS']['jWAVAX']
@@ -30,18 +30,18 @@ def swap(amount_avax, to_token, account, web3):
     approve = wavax.approve(joe_router_adr, amount_avax, {"from": account})
     
     balance1 = destination_token_interface.balanceOf(account, {"from": account})
-    print(f"{to_token} before swap: {balance1 * config['addresses']['DECIMALS'][to_token]}")
+    print(f"{to_token} before swap: {balance1 / 10 ** config['addresses']['DECIMALS'][to_token]}")
     path = [WAVAXadress, destination_token]
     #chain[-1]['timestamp']
     chain.sleep(0)
-    print(chain.time())
+    #print(chain.time())
     deadline = round(chain.time() + 10000)
     get_output_amount = joerouter.getAmountsOut(amount_avax, path)[1]
-    print(get_output_amount)
+    print(f"get_output_amount {get_output_amount}")
     swap = joerouter.swapExactAVAXForTokens(get_output_amount, path, account, deadline, {"from": account, "value" : amount_avax})
     swap.wait(1)
     balance2 = destination_token_interface.balanceOf(account, {"from": account})
-    print(f"{to_token} after swap: {balance2 * config['addresses']['DECIMALS'][to_token]}")
+    print(f"{to_token} [token] after swap: {balance2 / 10 ** config['addresses']['DECIMALS'][to_token]}")
     balance = wavax.balanceOf(account, {"from": account})
     print(f"wavax after swap: {Web3.fromWei(balance, 'ether')}")
 
@@ -63,21 +63,22 @@ def get_account_liquidity(account):
 
 
 def mint_and_borrow(mint_token, mint_amount, borrow):
+    #SETUP ADDRESSES ETC
     account = accounts[0]
     deposit_jtoken = config['addresses']['jADDRESS'][mint_token]
     deposit_token = config['addresses']['TOKENS'][mint_token]
     borrow_jtoken = config['addresses']['jADDRESS'][borrow]
     borrow_token = config['addresses']['TOKENS'][borrow]
-
     deposit_amount_dec = mint_amount * 10 ** config['addresses']['DECIMALS'][mint_token]
+    price_oracle = config['addresses']['CONTRACTS']['price_oracle']
     
-
-    
+    #SETUP INTERFACES    
     deposit_interface = interface.IERC20(deposit_token)
     deposit_jtoken_interface = interface.JTokenInterface(deposit_jtoken)
     deposit_jerc20_interface = interface.JErc20Interface(deposit_jtoken)
     borrow_jtoken_interface = interface.JTokenInterface(borrow_jtoken)
     borrow_jerc20_interface = interface.JErc20Interface(borrow_jtoken)
+    price_oracle_interface = interface.PriceOracle(price_oracle)
 
 
     allowed = deposit_interface.allowance(account, deposit_jtoken, {'from': account})
@@ -94,25 +95,34 @@ def mint_and_borrow(mint_token, mint_amount, borrow):
     enter_markets = joetroller_interface.enterMarkets([deposit_jtoken], {'from': account})
     print(f"return value enter markets: {enter_markets.return_value}")
     
+
     #DEPOSIT
     deposit_erc20_balance = deposit_interface.balanceOf(account, {'from': account})
-    print(f"Balance of {mint_token} [token] before deposit: {deposit_erc20_balance}")
+    print(f"Balance of {mint_token} [token] before deposit: {deposit_erc20_balance / 10 ** config['addresses']['DECIMALS'][mint_token]}")
     deposit_jtoken_balance = deposit_jerc20_interface.balanceOf(account, {'from': account})
-    print(f"Balance of {mint_token} [jtoken] before deposit: {deposit_jtoken_balance}")
-
-    print(f"depositing: {deposit_amount_dec}")
+    print(f"Balance of {mint_token} [jtoken] before deposit: {deposit_jtoken_balance / 10 ** config['addresses']['DECIMALS'][mint_token]}")
+    print(f"depositing: {deposit_amount_dec / 10 ** config['addresses']['DECIMALS'][mint_token]}")
     minting_tx = deposit_jerc20_interface.mint(deposit_amount_dec, {'from': account})
     
     print(f"mint transaction: {mint_token}")
-
     deposit_erc20_balance = deposit_interface.balanceOf(account, {'from': account})
     print(f"Balance of {mint_token} [token] after deposit: {deposit_erc20_balance}")
     deposit_jtoken_balance = deposit_jerc20_interface.balanceOf(account, {'from': account})
     print(f"Balance of {mint_token} [jtoken] after deposit: {deposit_jtoken_balance}")
     
 
-    #BORROW
-    borrow_amount = int(0.999*get_account_liquidity(account)[1]*10**(config['addresses']['DECIMALS'][borrow]-18))
+    #BORROWING
+    #GET ASSET PRICE
+    decimals_borrow = config['addresses']['DECIMALS'][borrow]
+    
+    if decimals_borrow != 18:
+        decimals_borrow_oracle = 18 - decimals_borrow
+    else:
+        decimals_borrow_oracle = 0
+    price = price_oracle_interface.getUnderlyingPrice(borrow_jtoken) * 10 ** (-18) * 10 ** (decimals_borrow_oracle)
+
+    #CALCULATE POSSIBLE BORROW AMOUNT AND BORROW
+    borrow_amount = int(0.999 * get_account_liquidity(account)[1] * 10 ** (decimals_borrow-18) / price)
     print(f"borrowing : {borrow_amount}")
     borrow = borrow_jerc20_interface.borrow(borrow_amount, {'from': account})
     print(f"borrow returns: {borrow.return_value}")

@@ -23,8 +23,8 @@ def web3():
 
 @pytest.fixture(scope="module", autouse=True)
 def supply_borrow_tokens():
-    supply_token = 'jWBTC'
-    borrow_token = 'jDAI'
+    supply_token = 'jWETH'
+    borrow_token = 'jMIM'
     return [supply_token, borrow_token]
 
 
@@ -56,7 +56,8 @@ def test_underwater_setup(web3, supply_borrow_tokens):
 
     #simulate going underwater - wait x days and accure interest
     forward_in_time(100)
- 
+#  26334262250430172324
+#  474016720507743101832
     update1 = config['addresses']['jADDRESS'][supply_token]
     interface.JErc20Interface(update1).exchangeRateCurrent({'from': account0})
     update2 = config['addresses']['jADDRESS'][borrow_token]

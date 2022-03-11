@@ -351,6 +351,8 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
         require(joinedAddresses[1] == token, "encoded data (borrowToken) does not match");
         require(flashBorrowAmount == amount, "encoded data (flashBorrowAmount) does not match");
         
+
+        
         {
         uint amountFrom = swap_from_AVAX(
             joerouter,
@@ -377,7 +379,8 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
             );
         
         
-        if (liquidation == 0){
+        if (liquidation == 0)
+        {
             emit liquidated(liquidation);
             //JTokenCollateralToSeize = joinedAddresses[4], 
             uint256 earnedJToken = JErc20Interface(joinedAddresses[4]).balanceOf(address(this));
@@ -394,12 +397,6 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
             // );
             emit swapped(joinedAddresses[5], //underlyingCollateral, 
             wavax, redeemed, amount_avax);
-
-
-
-
-
-
         }
         }
 
@@ -414,7 +411,8 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
         IWAVAX(wavax).deposit{value: amount + fee}();
         uint256 token_balance = IWAVAX(token).balanceOf(address(this));
         require(token_balance >= amount + fee, "not enough to repay flashloan");
-
+        uint256 profit = token_balance - amount - fee;
+        emit balance_after(profit);
         //require(ERC20(token).transfer(msg.sender, balance), "Transfer fund back failed");
         return keccak256("ERC3156FlashBorrowerInterface.onFlashLoan");
     }
