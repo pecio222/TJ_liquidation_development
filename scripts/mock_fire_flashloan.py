@@ -15,19 +15,35 @@ print(chosen_tokens['seize_token'])
 
 flashloanborrowerdev = 'adres'
 
-#modify decimals for PriceOracle function
-decimals_repay = 0
-if config['addresses']['DECIMALS'][chosen_tokens['repay_token']] != 18:
-    decimals_repay = 18 - config['addresses']['DECIMALS'][chosen_tokens['repay_token']]
-    #TODO other borrow than avax
+# #modify decimals for PriceOracle function
+# decimals_repay = 0
+# if config['addresses']['DECIMALS'][chosen_tokens['repay_token']] != 18:
+#     decimals_repay = 18 - config['addresses']['DECIMALS'][chosen_tokens['repay_token']]
+#     #TODO other borrow than avax
 
 flashBorrowAmount = int(1.01 * chosen_tokens['repay_amount'] 
-                            * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']]
-                            / 10 ** decimals_repay)
+                            * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']])
+
+if chosen_tokens['repay_token'] == 'jWAVAX':
+    isNative = 1
+    flashloanlender = config['addresses']['jADDRESS']['jUSDC']
+    borrow_token = config['addresses']['TOKENS']['jUSDC']
+elif chosen_tokens['repay_token'] == 'jXJOE':
+    isNative = 2
+    flashloanlender = config['addresses']['jADDRESS']['jWAVAX']
+    borrow_token = config['addresses']['TOKENS']['jWAVAX']
+
+else:
+    isNative = 0
+    flashloanlender = config['addresses']['jADDRESS']['jWAVAX']
+    borrow_token = config['addresses']['TOKENS']['jWAVAX']
+
+print(f"is native = {isNative}")
+
 
 flashloan = flashloanborrowerdev.doFlashloan(
-    [config['addresses']['jADDRESS']['jWAVAX'], #flashloanLender, 
-    config['addresses']['TOKENS']['jWAVAX'], #borrowToken, 
+    [flashloanlender, #flashloanLender, 
+    borrow_token, #borrowToken, 
     config['addresses']['TOKENS'][chosen_tokens['repay_token']], #tokenToRepay, 
     chosen_tokens['address'], #borrowerToLiquidate,
     config['addresses']['jADDRESS'][chosen_tokens['seize_token']], #JTokenCollateralToSeize,
@@ -36,7 +52,9 @@ flashloan = flashloanborrowerdev.doFlashloan(
     config['addresses']['PAIRS'][chosen_tokens['seize_token']] #joepair
     ],
     #borrowAmount, #TODO jak obliczyć ilość avax do pożyczenia?? chyba już nieważne,
-    flashBorrowAmount #chosen_tokens['repay_amount'] * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']]
+    flashBorrowAmount, #chosen_tokens['repay_amount'] * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']]
+    isNative,
+    {'from': accounts[1]}
     )
 
 def main():

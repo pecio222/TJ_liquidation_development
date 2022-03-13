@@ -53,6 +53,13 @@ interface IWAVAX {
 
 }
 
+interface IJoeBar {
+    function enter(uint256 _amount) external;
+    function leave(uint256 _share) external;
+    function balanceOf(address account) external view returns (uint256);
+
+    }
+
 interface JErc20Interface {
     function liquidateBorrow(
         address borrower,
@@ -83,6 +90,15 @@ interface IJoeRouter01 {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
+    function swapExactTokensForTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
+
 
     function getAmountsIn(uint256 amountOut, address[] calldata path)
         external
@@ -94,6 +110,13 @@ interface IJoeRouter01 {
         uint256 reserveIn,
         uint256 reserveOut
     ) external pure returns (uint256 amountOut);
+
+    function getAmountsOut(uint256 amountIn, address[] calldata path)
+        external
+        view
+        returns (uint256[] memory amounts);
+
+
 }
 
 interface IJoePair{
@@ -122,7 +145,7 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
     /**
      * @notice Event emitted when !!debugging only
      */
-    event balance_after(uint256 amount_balance);
+    event balance_after(string numer, uint256 amount_balance);
 
     /**
      * @notice Event emitted when contract is funded with AVAX
@@ -146,7 +169,7 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
     /**
      * @notice Event emitted when liquidation from liquidate_borrow function happens
      */
-    event liquidated(uint borrow);
+    event liquidated(uint256 borrow);
 
     event liquidation_failed(uint borrow);
 
@@ -155,15 +178,17 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
      */
     address public comptroller;
     address public joerouter;
-    address public wavax;
+    address public wavaxAddress;
     address public priceOracle;
+    address public joeAddress;
 
     
     constructor(address _comptroller, address _joerouter) {
         comptroller = _comptroller;
         joerouter = _joerouter;
-        wavax = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+        wavaxAddress = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
         priceOracle = 0xd7Ae651985a871C1BC254748c40Ecc733110BC2E;
+        joeAddress = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd;
 
     }
         
@@ -201,29 +226,31 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
                 {
                     emit liquidated(liquidateBorrow);
                 }
+            else if (liquidateBorrow != 0)
+                {
+                    emit liquidation_failed(liquidateBorrow);
+                }
             return liquidateBorrow;
 
     }
     function swap_from_AVAX(
-        address JoeRouter,
-        address wAVAXToken,
-        address JTokenBorrowed,
+        address tokenToRepay,
         uint256 borrowedTokenAmountToRepay,
         uint256 flashBorrowAmount) 
         internal returns (uint256)
         {
             address[] memory path = new address[](2);
-            path[0] = wAVAXToken;
-            path[1] = JTokenBorrowed;
-            IWAVAX(wAVAXToken).approve(JoeRouter, flashBorrowAmount);  //TODO sprawdzić czy się nie zjebało była zmiana z borrowedTokenAmountToRepay
-            uint256[] memory amountsIn = IJoeRouter01(JoeRouter).getAmountsIn(
+            path[0] = wavaxAddress;
+            path[1] = tokenToRepay;
+            IWAVAX(wavaxAddress).approve(joerouter, flashBorrowAmount);  //TODO sprawdzić czy się nie zjebało była zmiana z borrowedTokenAmountToRepay
+            uint256[] memory amountsIn = IJoeRouter01(joerouter).getAmountsIn(
                 borrowedTokenAmountToRepay,
                 path
             );
             //TODO ogarnąć zamianę z wavax na avax??
-            IWAVAX(wAVAXToken).withdraw(flashBorrowAmount);
+            //IWAVAX(wavaxAddress).withdraw(flashBorrowAmount); //TODO sprawdzic czy sie nie sypia inne przypadki
             //amountsIn[0]
-            uint256[] memory amounts = IJoeRouter01(JoeRouter).swapAVAXForExactTokens{value: amountsIn[0]}(
+            uint256[] memory amounts = IJoeRouter01(joerouter).swapAVAXForExactTokens{value: amountsIn[0]}(
                 amountsIn[1],
                 path,
                 address(this),
@@ -234,42 +261,70 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
         }
 
     function swap_to_AVAX(
-        address JoeRouter,
-        address wAVAXToken,
-        address underlyingCollateral,
-        uint256 redeemed,
+        address addressFrom,
+        uint256 amountFrom,
         address joePair) 
         internal returns (uint256)
         {
             address[] memory path = new address[](2);
-            path[1] = wAVAXToken;
-            path[0] = underlyingCollateral;
-            ERC20(underlyingCollateral).approve(JoeRouter, redeemed);
+            path[1] = wavaxAddress;
+            path[0] = addressFrom;
+            ERC20(addressFrom).approve(joerouter, amountFrom);
 
-            (uint112 reserve0, uint112 reserve1, ) = IJoePair(joePair).getReserves();
-
-            uint256 amountOut = IJoeRouter01(JoeRouter).getAmountOut(
-                redeemed,
-                reserve0,
-                reserve1
+            uint256[] memory amountsOut = IJoeRouter01(joerouter).getAmountsOut(
+                amountFrom,
+                path
             );
+            emit balance_after('a', amountsOut[0]);
 
 
-            uint256[] memory amounts = IJoeRouter01(JoeRouter).swapExactTokensForAVAX(
-                redeemed,
-                amountOut,
+            uint256[] memory amounts = IJoeRouter01(joerouter).swapExactTokensForAVAX(
+                amountFrom,
+                amountsOut[1],
                 path,
                 address(this),
                 block.timestamp + 1000
             );
-            return amounts[0];
+            return amounts[1];
         }
+
+
+    function swap_token_to_token(
+        address fromToken,
+        address toToken,
+        uint256 fromTokenAmount) 
+        internal returns (uint256)
+        {
+            address[] memory path = new address[](3);
+            path[2] = toToken;
+            path[1] = wavaxAddress;
+            path[0] = fromToken;
+            ERC20(fromToken).approve(joerouter, fromTokenAmount);
+
+            uint256[] memory flashBorrowAmount = IJoeRouter01(joerouter).getAmountsOut(
+                fromTokenAmount,
+                path
+            );
+            emit balance_after('b', flashBorrowAmount[0]);
+
+
+            uint256[] memory amounts = IJoeRouter01(joerouter).swapExactTokensForTokens(
+                fromTokenAmount,
+                flashBorrowAmount[0],
+                path,
+                address(this),
+                block.timestamp + 1000
+            );
+            return amounts[1];
+        }
+
+
 
     // /**
     //  * @notice Function to start flashloan and liquidate borrow
     //  * Params below are used to request flashloan
     //  * @param flashloanLender contract address of flashloan lender -jWAVAX etc
-    //  * @param borrowToken token that is being flashloaned
+    //  * @param flashloanedToken token that is being flashloaned
     //  * @param borrowAmount USD amount of token being flashloaned
     //  * Params below are passed in data, returned onFlashloan and used later to swap/liquidate
     //  * @param tokenToRepay token address that will be repaid before liquidating underlying collateral
@@ -282,39 +337,80 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
     //  */
 
 
+    struct joinedAdres {
+        address flashloanLender;
+        address flashloanedToken;
+        address tokenToRepay;
+        address borrowerToLiquidate;
+        address JTokenCollateralToSeize;
+        address underlyingCollateral;
+        address borrowedJTokenAddress;
+        address joepair;
+    }
+    struct returnValues {
+        uint256 amountFrom;
+        uint256 amount_avax;
+        uint256 liquidate_borrow;
+        uint256 earnedJToken;
+        uint256 earnedUnderlyingToken;
+        uint256 amountToken;
+    }
+
+
+
     function doFlashloan (
-        address[] memory joinedAddresses, //address flashloanLender,
-        //address borrowToken,
-        //uint256 borrowAmount, //useless?
-        //address tokenToRepay,
-        uint256 borrowedAmountToRepay
-        //address borrowerToLiquidate,
-        //address JTokenCollateralToSeize,
-        //address underlyingCollateral,
-        //address borrowedJTokenAddress,
-        //address joePair
+        joinedAdres memory joinedAddresses,
+        uint256 borrowedAmountToRepay,
+        int256 isNative
     ) external onlyOwner {
-        //
-        uint256 tokenToRepayPrice = PriceOracle(priceOracle).getUnderlyingPrice(address(joinedAddresses[6]));
-        uint256 flashloanedTokenPrice = PriceOracle(priceOracle).getUnderlyingPrice(address(joinedAddresses[0]));
+        // chwilowo nieuzywane
+        // uint256 tokenToRepayPrice = PriceOracle(priceOracle).getUnderlyingPrice(address(joinedAddresses[6]));
+        // uint256 flashloanedTokenPrice = PriceOracle(priceOracle).getUnderlyingPrice(address(joinedAdres.flashloanLender));
+        // uint256 flashBorrowAmount = div(borrowedAmountToRepay * tokenToRepayPrice, flashloanedTokenPrice, 'Price oracle failed - no AVAX price available');
 
 
-        uint256 flashBorrowAmount = div(borrowedAmountToRepay * tokenToRepayPrice, flashloanedTokenPrice, 'Price oracle failed - no AVAX price available');
+        //can't flashloan and repay the same token due to reentrancy protection, so:
+        //calculating required amount of flashloaned token, that will be swapped to token, that is being repaid
+        //using JoeRouter
+        uint256 pathLength;
+        if (isNative == 3) {
+            pathLength = 3;
+        }
+        else {
+            pathLength = 2;
+        }
+
+        address[] memory path = new address[](pathLength);
+
+        if (isNative == 3) {
+            //avoiding reentrancy TODO
+            path[0] = joinedAddresses.flashloanedToken;
+            path[1] = wavaxAddress;
+            path[2] = joinedAddresses.tokenToRepay;    
+        }
+        else {
+            //if any other token is to be repaid:
+
+            path[0] = joinedAddresses.flashloanedToken;
+            path[1] = joinedAddresses.tokenToRepay;    
+        }
+
+
+
+        uint256[] memory flashBorrowAmount = IJoeRouter01(joerouter).getAmountsIn(
+            borrowedAmountToRepay,
+            path
+        );
+        emit balance_after('c', flashBorrowAmount[0]);
 
         bytes memory data = abi.encode(
             joinedAddresses, 
-            flashBorrowAmount, 
-            //tokenToRepay, 
-            borrowedAmountToRepay
-            //borrowerToLiquidate, 
-            //JTokenCollateralToSeize,
-            //underlyingCollateral, 
-            //borrowedJTokenAddress,
-            //joePair
+            flashBorrowAmount[0], 
+            borrowedAmountToRepay,
+            isNative
             );
-        ERC3156FlashLenderInterface(joinedAddresses[0]).flashLoan(this, address(this), flashBorrowAmount, data);
+        ERC3156FlashLenderInterface(joinedAddresses.flashloanLender).flashLoan(this, address(this), flashBorrowAmount[0], data);
     }
-
 
 
     /**
@@ -332,91 +428,173 @@ contract FlashloanBorrowerDev is ERC3156FlashBorrowerInterface, Ownable {
         uint256 amount,
         uint256 fee,
         bytes calldata data
-    ) override external returns (bytes32) {
+    ) override external returns (bytes32) 
+    {
         
         require(Comptroller(comptroller).isMarketListed(msg.sender), "untrusted message sender");
         require(initiator == address(this), "FlashBorrower: Untrusted loan initiator");
-        (address[] memory joinedAddresses, //borrowToken
+        (joinedAdres memory joinedAddresses,
         uint256 flashBorrowAmount,
-        //address tokenToRepay,
-        uint256 borrowedAmountToRepay
-        //address borrowerToLiquidate,
-        //address JTokenCollateralToSeize,
-        //address underlyingCollateral,
-        //address borrowedJTokenAddress,
-        //address joePair
-        ) = abi.decode(data, (address[], uint256, uint256));
-
+        uint256 borrowedAmountToRepay,
+        int256 isNative
+        ) = abi.decode(data, (joinedAdres, uint256, uint256, int256));
+        returnValues memory retrnVals;
         emit fees_flash(amount, fee);
-        require(joinedAddresses[1] == token, "encoded data (borrowToken) does not match");
+        require(joinedAddresses.flashloanedToken == token, "encoded data (flashloanedToken) does not match");
         require(flashBorrowAmount == amount, "encoded data (flashBorrowAmount) does not match");
-        
 
-        
+
+        if (isNative == 0 || isNative == 5)
         {
-        uint amountFrom = swap_from_AVAX(
-            joerouter,
-            token,
-            joinedAddresses[2], //tokenToRepay
-            borrowedAmountToRepay,
-            flashBorrowAmount);
-        emit swapped(token, joinedAddresses[2], amountFrom, borrowedAmountToRepay);
-        
+            IWAVAX(wavaxAddress).withdraw(flashBorrowAmount);
+            retrnVals.amountFrom = swap_from_AVAX(
+                joinedAddresses.tokenToRepay,
+                borrowedAmountToRepay,
+                flashBorrowAmount);
+            emit swapped(token, joinedAddresses.tokenToRepay, retrnVals.amountFrom, borrowedAmountToRepay);
+        }
+        else if (isNative == 1 || isNative == 4 || isNative == 2)
+        {
+            //emit balance_after(flashBorrowAmount);
+            //debugging only
+            retrnVals.amount_avax = swap_to_AVAX(
+                joinedAddresses.flashloanedToken,
+                flashBorrowAmount,
+                joinedAddresses.joepair);
+
+            emit swapped(joinedAddresses.flashloanedToken, joinedAddresses.tokenToRepay, flashBorrowAmount, retrnVals.amount_avax);
+            IWAVAX(wavaxAddress).deposit{value: retrnVals.amount_avax}();
+            
+        }
+        else if (isNative == 3)
+        {
+            //emit balance_after(flashBorrowAmount);
+            //debugging only
+            retrnVals.amountToken = swap_token_to_token(
+                joinedAddresses.flashloanedToken,
+                joinedAddresses.tokenToRepay,
+                flashBorrowAmount);
+
+            emit swapped(joinedAddresses.flashloanedToken, joinedAddresses.tokenToRepay, flashBorrowAmount, retrnVals.amountToken);
+           
+        }
         
         emit beforeliquidation(
-            joinedAddresses[3], //borrowerToLiquidate,
-            joinedAddresses[4], //JTokenCollateralToSeize,
-            joinedAddresses[2], //tokenToRepay,
+            joinedAddresses.borrowerToLiquidate,
+            joinedAddresses.JTokenCollateralToSeize,
+            joinedAddresses.tokenToRepay,
             borrowedAmountToRepay,
-            joinedAddresses[6] //borrowedJTokenAddress
+            joinedAddresses.borrowedJTokenAddress
             );
-        uint liquidation = liquidate_borrow(
-            joinedAddresses[3], //borrowerToLiquidate,
-            joinedAddresses[4], //JTokenCollateralToSeize,
-            joinedAddresses[2], //tokenToRepay,
+        liquidate_borrow(
+            joinedAddresses.borrowerToLiquidate,
+            joinedAddresses.JTokenCollateralToSeize,
+            joinedAddresses.tokenToRepay,
             borrowedAmountToRepay,
-            joinedAddresses[6] //borrowedJTokenAddress
+            joinedAddresses.borrowedJTokenAddress
             );
         
         
-        if (liquidation == 0)
-        {
-            emit liquidated(liquidation);
-            //JTokenCollateralToSeize = joinedAddresses[4], 
-            uint256 earnedJToken = JErc20Interface(joinedAddresses[4]).balanceOf(address(this));
-            uint256 redeemed = JErc20Interface(joinedAddresses[4]).redeem(earnedJToken);
-            uint256 earnedSizedToken = ERC20(joinedAddresses[5]).balanceOf(address(this));
-            uint256 amount_avax = swap_to_AVAX(
-                joerouter,
-                wavax,
-                joinedAddresses[5], //underlyingCollateral,
-                earnedSizedToken,
-                joinedAddresses[7] //joePair
+
+        retrnVals.earnedJToken = JErc20Interface(joinedAddresses.JTokenCollateralToSeize).balanceOf(address(this));
+        JErc20Interface(joinedAddresses.JTokenCollateralToSeize).redeem(retrnVals.earnedJToken);
+
+        retrnVals.earnedUnderlyingToken = ERC20(joinedAddresses.underlyingCollateral).balanceOf(address(this));
+        //debugging
+        emit balance_after('d', retrnVals.earnedUnderlyingToken);
+
+        if (isNative == 0)
+            {
+            retrnVals.amount_avax = swap_to_AVAX(
+                joinedAddresses.underlyingCollateral,
+                retrnVals.earnedUnderlyingToken,
+                joinedAddresses.joepair
             );
+            emit swapped(joinedAddresses.underlyingCollateral, wavaxAddress, retrnVals.earnedUnderlyingToken, retrnVals.amount_avax);
+            }
+        else if (isNative == 1)
+            {
+            retrnVals.amount_avax = swap_to_AVAX(
+                joinedAddresses.underlyingCollateral,
+                retrnVals.earnedUnderlyingToken,
+                joinedAddresses.joepair
+            );
+            emit swapped(joinedAddresses.underlyingCollateral, wavaxAddress, retrnVals.earnedUnderlyingToken, retrnVals.amount_avax);
 
-            // );
-            emit swapped(joinedAddresses[5], //underlyingCollateral, 
-            wavax, redeemed, amount_avax);
+            //TODO
+            retrnVals.amountFrom = swap_from_AVAX(
+                joinedAddresses.flashloanedToken,
+                amount + fee,
+                retrnVals.amount_avax);
+            emit swapped(wavaxAddress, joinedAddresses.flashloanedToken, retrnVals.amountFrom, amount + fee);
+            }
+        else if (isNative == 3 || isNative == 4){
+            //debugging
+            emit balance_after('e', amount + fee);
+            emit balance_after('f', retrnVals.earnedUnderlyingToken);
+            IWAVAX(wavaxAddress).withdraw(retrnVals.earnedUnderlyingToken);
+            retrnVals.amountFrom = swap_from_AVAX(
+                joinedAddresses.flashloanedToken,
+                amount + fee,
+                retrnVals.earnedUnderlyingToken);
+            emit swapped(wavaxAddress, joinedAddresses.flashloanedToken, retrnVals.amountFrom, amount + fee);
+            }
+        else if (isNative == 2){
+            //leave all xjoe
+            IJoeBar(joinedAddresses.underlyingCollateral).leave(retrnVals.earnedUnderlyingToken);
+
+            //retrieve balance of joe
+            retrnVals.earnedUnderlyingToken = ERC20(joeAddress).balanceOf(address(this));
+            emit balance_after('balance of joe', retrnVals.earnedUnderlyingToken);
+            //trade joe to flashloaned token
+            
+            {
+            retrnVals.amount_avax = swap_to_AVAX(
+                joeAddress,
+                retrnVals.earnedUnderlyingToken,
+                joinedAddresses.joepair
+            );
+            emit swapped(joinedAddresses.underlyingCollateral, wavaxAddress, retrnVals.earnedUnderlyingToken, retrnVals.amount_avax);
+
+            //TODO
+            retrnVals.amountFrom = swap_from_AVAX(
+                joinedAddresses.flashloanedToken,
+                amount + fee,
+                retrnVals.amount_avax);
+            emit swapped(wavaxAddress, joinedAddresses.flashloanedToken, retrnVals.amountFrom, amount + fee);
+            }
         }
+        else if (isNative == 5){
+            //leave all xjoe
+            IJoeBar(joinedAddresses.underlyingCollateral).leave(retrnVals.earnedUnderlyingToken);
+
+            //retrieve balance of joe
+            retrnVals.earnedUnderlyingToken = ERC20(joeAddress).balanceOf(address(this));
+            emit balance_after('balance of joe', retrnVals.earnedUnderlyingToken);
+            //trade joe to flashloaned token
+            
+            retrnVals.amount_avax = swap_to_AVAX(
+                joeAddress,
+                retrnVals.earnedUnderlyingToken,
+                joinedAddresses.joepair
+            );
+            emit swapped(joinedAddresses.underlyingCollateral, wavaxAddress, retrnVals.earnedUnderlyingToken, retrnVals.amount_avax);
+
         }
-
-
-        // uint256 balance = IWAVAX(token).balanceOf(address(this));
-        // //ERC20(token).withdraw(amount + fee);
-        // emit balance_after(balance);
+        
 
         /* allows flashloan to be repaid */
-        JErc20Interface(token).approve(msg.sender, amount + fee);
-        /* converts sent avax to wavax for flashloan to be repaid */
-        IWAVAX(wavax).deposit{value: amount + fee}();
+        JErc20Interface(token).approve(joinedAddresses.flashloanLender, amount + fee);
+        if (isNative == 0 || isNative == 5)
+        {
+        /* converts avax to wavax for flashloan to be repaid */
+        IWAVAX(wavaxAddress).deposit{value: amount + fee}();
+        }
         uint256 token_balance = IWAVAX(token).balanceOf(address(this));
         require(token_balance >= amount + fee, "not enough to repay flashloan");
         uint256 profit = token_balance - amount - fee;
-        emit balance_after(profit);
-        //require(ERC20(token).transfer(msg.sender, balance), "Transfer fund back failed");
+        emit balance_after('profit', profit);
+        //IWAVAX(wavaxAddress).deposit{value: 10 ** 18 *(amount + fee)}();
         return keccak256("ERC3156FlashBorrowerInterface.onFlashLoan");
     }
-
-
-
 }
