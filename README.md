@@ -68,7 +68,10 @@ It was fun. Exhausting, long, full of doubts, but fun :)
 
 In this repo you can find working solution. Not competitive, not fast, not safe, with issues, but.. working.
 
-As for now, repository is set to private. Probably will make it open after bounty resolution, but feel free to share anyway.
+Hoping for the best in this bounty!
+Would love any feedback, insights and anything, that would help me develop myself more.
+
+Have fun!
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
