@@ -11,7 +11,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/pecio222/TJ_liquidation_bounty">
+  <a href="https://github.com/pecio222/TJ_liquidation_development">
   </a>
 
 <h3 align="center">Liquidation Bot using Flash Loans</h3>
@@ -19,12 +19,12 @@
   <p align="center">
     My humble take on Liquidation Bot for Trader's Joe lending  
     <br />
-    <a href="https://github.com/pecio222/TJ_liquidation_bounty"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/pecio222/TJ_liquidation_development"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/pecio222/TJ_liquidation_bounty/issues">Report Bug</a>
+    <a href="https://github.com/pecio222/TJ_liquidation_development/issues">Report Bug</a>
     ·
-    <a href="https://github.com/pecio222/TJ_liquidation_bounty/issues">Request Feature</a>
+    <a href="https://github.com/pecio222/TJ_liquidation_development/issues">Request Feature</a>
   </p>
 </div>
 
@@ -107,7 +107,7 @@ To get a local copy up and running follow these simple example steps.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/pecio222/TJ_liquidation_bounty.git
+   git clone https://github.com/pecio222/TJ_liquidation_development.git
    ```
 2. Install dependencies
    ```sh
@@ -258,7 +258,7 @@ graph TD;
     - No idea why my previously-working-solutions-from-other-places decided to die today and stop collaboration. Easy to fix, probably.
 
 
-See the [open issues](https://github.com/pecio222/TJ_liquidation_bounty/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/pecio222/TJ_liquidation_development/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -303,7 +303,7 @@ Do what you want. If you find this useful, DM me. Would be happy to help.
 
 [Discord - pecio33#5843](https://discord.com/users/pecio33#5843/)
 
-Project Link: [https://github.com/pecio222/TJ_liquidation_bounty](https://github.com/pecio222/TJ_liquidation_bounty)
+Project Link: [https://github.com/pecio222/TJ_liquidation_development](https://github.com/pecio222/TJ_liquidation_development)
 
 If you want to talk about this repo, DM me, would be happy to know fellow wanna-be coder.
 
