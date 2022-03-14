@@ -24,19 +24,19 @@ flashloanborrowerdev = 'adres'
 flashBorrowAmount = int(1.01 * chosen_tokens['repay_amount'] 
                             * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']])
 
-if chosen_tokens['repay_token'] == 'jWAVAX':
+if chosen_tokens['repay_token'] == 'jAVAX':
     isNative = 1
     flashloanlender = config['addresses']['jADDRESS']['jUSDC']
     borrow_token = config['addresses']['TOKENS']['jUSDC']
 elif chosen_tokens['repay_token'] == 'jXJOE':
     isNative = 2
-    flashloanlender = config['addresses']['jADDRESS']['jWAVAX']
-    borrow_token = config['addresses']['TOKENS']['jWAVAX']
+    flashloanlender = config['addresses']['jADDRESS']['jAVAX']
+    borrow_token = config['addresses']['TOKENS']['jAVAX']
 
 else:
     isNative = 0
-    flashloanlender = config['addresses']['jADDRESS']['jWAVAX']
-    borrow_token = config['addresses']['TOKENS']['jWAVAX']
+    flashloanlender = config['addresses']['jADDRESS']['jAVAX']
+    borrow_token = config['addresses']['TOKENS']['jAVAX']
 
 print(f"is native = {isNative}")
 

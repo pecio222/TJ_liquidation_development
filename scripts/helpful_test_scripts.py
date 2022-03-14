@@ -1,3 +1,4 @@
+from telnetlib import EL
 from eth_account import Account
 #from brownie import JToken
 from scripts.helpful_scripts import get_account, connect_to_ETH_provider
@@ -19,8 +20,12 @@ def swap(amount_avax, to_token, account, web3):
     print(f"amount of avax to exchange: {amount_avax}")
     amount_avax = amount_avax * 10 ** 18
     #ERC20 ADRESSES
-    WAVAXadress = config['addresses']['TOKENS']['jWAVAX']
-    destination_token = config['addresses']['TOKENS'][to_token]
+    WAVAXadress = config['addresses']['TOKENS']['jAVAX']
+    if to_token == 'jXJOE':
+        destination_token = '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd'
+    else: 
+        destination_token = config['addresses']['TOKENS'][to_token]
+
     joe_router_adr = config['addresses']['CONTRACTS']['joerouter']
     joe_factory = config['addresses']['CONTRACTS']['joefactory']
 
@@ -42,7 +47,15 @@ def swap(amount_avax, to_token, account, web3):
     print(f"get_output_amount {get_output_amount}")
     swap = joerouter.swapExactAVAXForTokens(get_output_amount, path, account, deadline, {"from": account, "value" : amount_avax})
     swap.wait(1)
-    balance2 = destination_token_interface.balanceOf(account, {"from": account})
+    if to_token == 'jXJOE':
+        joeinterface = interface.IJoeBar(config['addresses']['TOKENS']['jXJOE'])
+        joebalance = destination_token_interface.balanceOf(account, {"from": account})
+        destination_token_interface.approve(config['addresses']['TOKENS']['jXJOE'], joebalance, {"from": account})
+        joeinterface.enter(joebalance, {"from": account})
+        balance2 = joeinterface.balanceOf(account, {"from": account})
+    else:
+        balance2 = destination_token_interface.balanceOf(account, {"from": account})
+
     print(f"{to_token} [token] after swap: {balance2 / 10 ** config['addresses']['DECIMALS'][to_token]}")
     balance = wavax.balanceOf(account, {"from": account})
     print(f"wavax after swap: {Web3.fromWei(balance, 'ether')}")

@@ -82,7 +82,7 @@ def test_flashloan_liquidation(contract, web3):
     destination_token_interface = interface.IERC20(destination_token)
     borrow_token_adr = config['addresses']['TOKENS'][borrow_token]
     borrow_token_interface = interface.IERC20(borrow_token_adr)  
-    wavax_adr = config['addresses']['TOKENS']['jWAVAX']
+    wavax_adr = config['addresses']['TOKENS']['jAVAX']
     wavax_inter = interface.IWAVAX(wavax_adr)
     joe_router_adr = config['addresses']['CONTRACTS']['joerouter']
     joer_inter = interface.IJoeRouter01(joe_router_adr)
@@ -117,8 +117,8 @@ def test_flashloan_liquidation(contract, web3):
                                 / 10 ** decimals_repay)
     try:
         flashloan = flashloanborrowerdev.doFlashloan(
-            [config['addresses']['jADDRESS']['jWAVAX'], #flashloanLender, 
-            config['addresses']['TOKENS']['jWAVAX'], #borrowToken, 
+            [config['addresses']['jADDRESS']['jAVAX'], #flashloanLender, 
+            config['addresses']['TOKENS']['jAVAX'], #borrowToken, 
             config['addresses']['TOKENS'][chosen_tokens['repay_token']], #tokenToRepay, 
             chosen_tokens['address'], #borrowerToLiquidate,
             config['addresses']['jADDRESS'][chosen_tokens['seize_token']], #JTokenCollateralToSeize,
@@ -153,7 +153,7 @@ def main():
     # destination_token_interface = interface.IERC20(destination_token)
     # borrow_token_adr = config['addresses']['TOKENS'][borrow_token]
     # borrow_token_interface = interface.IERC20(borrow_token_adr)  
-    # wavax_adr = config['addresses']['TOKENS']['jWAVAX']
+    # wavax_adr = config['addresses']['TOKENS']['jAVAX']
     # wavax_inter = interface.IWAVAX(wavax_adr)
     # joe_router_adr = config['addresses']['CONTRACTS']['joerouter']
     # joer_inter = interface.IJoeRouter01(joe_router_adr)

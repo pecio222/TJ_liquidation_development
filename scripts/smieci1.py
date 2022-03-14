@@ -12,7 +12,7 @@ def main():
     # price_oracle = '0xd7Ae651985a871C1BC254748c40Ecc733110BC2E'
     # price_interface = interface.PriceOracle(price_oracle)
 
-    # cenaAVAX = price_interface.getUnderlyingPrice(config['addresses']['jADDRESS']['jWAVAX'] , {'from': accounts[0]})
+    # cenaAVAX = price_interface.getUnderlyingPrice(config['addresses']['jADDRESS']['jAVAX'] , {'from': accounts[0]})
     # cenajWETH = price_interface.getUnderlyingPrice(config['addresses']['jADDRESS']['jWETH'] , {'from': accounts[0]})
     # cenajWBTC = price_interface.getUnderlyingPrice(config['addresses']['jADDRESS']['jWBTC'] , {'from': accounts[0]})
     # cenajUSDC = price_interface.getUnderlyingPrice(config['addresses']['jADDRESS']['jUSDC'] , {'from': accounts[0]})

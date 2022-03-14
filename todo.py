@@ -1,27 +1,29 @@
 
 ###TOP PRIORITY - REQUIRED###
 
-#TODO unit tests - ownable, trades
 
-#TODO add functionality - liquidate xjoe
 
 #TODO write readme
-#TODO comments on code - solidity
 #TODO comments on code - python
-#TODO choose_tokens_to_seize_and_repay - add "if entered markets clause"
-#TODO logger - logi + twitter/discord
+#TODO logger - logi + twitter/discord #CHYBA SIE NIE UDA
+#TODO main function
 
 
 ##LOWER PRIORITY###
 #TODO refactor funtion and variables names
-#TODO some kind of diagrams for documentation
+
+###jebać to
 #TODO too many approvals?
-#TODO swap_to_AVAX NIE JEST JUŻ REDEEMED
-
-
 
 
 ###DONE ALREADY###
+#TODO some kind of diagrams for documentation
+#TODO choose_tokens_to_seize_and_repay - add "if entered markets clause"
+#TODO comments on code - solidity
+#TODO withdraw function
+#TODO unit tests - ownable, trades
+#TODO swap_to_AVAX NIE JEST JUŻ REDEEMED
+#TODO add functionality - liquidate xjoe
 #TODO refactor addresses into struct/sth more readable
 #TODO refactor test - mocking listner of liquidations
 #TODO pożyczam mniej niż wymieniam, ze względu na opłaty na dex - patrz przykład poniżej

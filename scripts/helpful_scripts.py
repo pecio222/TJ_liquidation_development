@@ -2,7 +2,7 @@ from brownie import accounts, config, network
 import requests
 import time
 from web3 import Web3
-
+#from discord_webhook import DiscordWebhook
 
 LOCAL_BLOCKCHAIN_ENVIRONMENTS = [
     "development",
@@ -53,10 +53,10 @@ def connect_to_ETH_provider():
 
 
 def get_underwater_accounts():
-    # TODO account health
+
     query_underwater_accounts = """
     {
-    accounts(where: {health_gt: 1.5, health_lt: 1.505, totalBorrowValueInUSD_gt: 0}) {
+    accounts(where: {health_gt: 0, health_lt: 1, totalBorrowValueInUSD_gt: 0}) {
         id
     }
     }
@@ -76,7 +76,6 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
     token_prices = []
     debt_amounts = []
     collateral_amounts = []
-    token_prices = []
     debt_usd_values = []
     collateral_usd_values = []
 
@@ -87,26 +86,31 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
         token_price = graph_account_data['accounts'][0]['tokens'][token]['market']['underlyingPriceUSD']
         debt_amount = graph_account_data['accounts'][0]['tokens'][token]['borrowBalanceUnderlying']
         token_name = graph_account_data['accounts'][0]['tokens'][token]['symbol']
+        entered_market = graph_account_data['accounts'][0]['tokens'][token]['enteredMarket']
         
         token_names.append(token_name)
         token_prices.append(token_price)
         debt_amounts.append(debt_amount)
         collateral_amounts.append(collateral_amount)
         debt_usd_values.append(float(token_price) * float(debt_amount))
-        collateral_usd_values.append(float(token_price) * float(collateral_amount))
+        #ignore collateral usd value, when searching for liquidation potential
+        if entered_market == True:
+            collateral_usd_values.append(float(token_price) * float(collateral_amount))
+        else:
+            collateral_usd_values.append(0)
         #print("{}: collamm {}, debtamm {}, tokenprice {}".format(
         #    token_name, collateral_amount, debt_amount, token_price))
 
-    # print(token_names)
-    # print(token_prices)
-    # print(debt_amounts)
-    # print(collateral_amounts)
-    # print(token_prices)
-    # print(debt_usd_values)
-    # print(collateral_usd_values)
+    print(address)
+    print(token_names)
+    print(token_prices)
+    print(debt_amounts)
+    print(collateral_amounts)
+    print(debt_usd_values)
+    print(collateral_usd_values)
 
-    # print(  f"max borrow usd value: {max(debt_usd_values)} on index {debt_usd_values.index(max(debt_usd_values))}"
-    #         f"of coin {token_names[debt_usd_values.index(max(debt_usd_values))]}")
+    print(  f"max borrow usd value: {max(debt_usd_values)} on index {debt_usd_values.index(max(debt_usd_values))}"
+            f"of coin {token_names[debt_usd_values.index(max(debt_usd_values))]}")
     
     max_debt_repaid = float(max(debt_usd_values))
     max_collateral_seized_usd = float(max(collateral_usd_values))
@@ -119,7 +123,7 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
         # print(
         #     f"seizing part of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
         return {'address': address,
-                'repay_amount': float(debt_amounts[index_debt]) / 2,
+                'repay_amount': float(debt_amounts[index_debt]) / 2 * 0.95,
                 'repay_token': token_names[index_debt],
                 'max_seize_USD_value': max_collateral_seized_usd,
                 'seize_token': token_names[index_collateral]
@@ -133,7 +137,7 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
         # print(
         #     f"seizing PART of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
         return {'address': address,
-                'repay_amount': float(max_collateral_seized_usd/max_debt_repaid) * float(debt_amounts[index_debt]) * 0.95,
+                'repay_amount': (float(max_collateral_seized_usd/max_debt_repaid) * float(debt_amounts[index_debt]) * 0.95)/2,
                 'repay_token': token_names[index_debt],
                 'max_seize_USD_value': max_collateral_seized_usd,
                 'seize_token': token_names[index_collateral]
@@ -167,3 +171,47 @@ def get_account_tokens(address):
     tokens_of_underwater_account = ask_graphql(
         query_underwater_acc_balance_short)['data']
     return tokens_of_underwater_account
+
+
+def decide_native(chosen_tokens):
+    if chosen_tokens['repay_token'] == chosen_tokens['seize_token'] == 'jAVAX':
+        isNative = 4
+        flashloanlender = config['addresses']['jADDRESS']['jUSDC']
+        flashloaned_token = config['addresses']['TOKENS']['jUSDC']
+    elif chosen_tokens['seize_token'] == 'jXJOE' and chosen_tokens['repay_token'] == 'jAVAX':
+        isNative = 2
+        flashloanlender = config['addresses']['jADDRESS']['jUSDC']
+        flashloaned_token = config['addresses']['TOKENS']['jUSDC']
+    elif chosen_tokens['seize_token'] == 'jXJOE' and chosen_tokens['repay_token'] != 'jAVAX':
+        isNative = 5
+        flashloanlender = config['addresses']['jADDRESS']['jAVAX']
+        flashloaned_token = config['addresses']['TOKENS']['jAVAX']
+    elif chosen_tokens['repay_token'] == 'jAVAX':
+        isNative = 1
+        flashloanlender = config['addresses']['jADDRESS']['jUSDC']
+        flashloaned_token = config['addresses']['TOKENS']['jUSDC']
+    elif chosen_tokens['seize_token'] == 'jAVAX':
+        isNative = 3
+        flashloanlender = config['addresses']['jADDRESS']['jUSDC']
+        flashloaned_token = config['addresses']['TOKENS']['jUSDC']
+    else:
+        isNative = 0
+        flashloanlender = config['addresses']['jADDRESS']['jAVAX']
+        flashloaned_token = config['addresses']['TOKENS']['jAVAX']
+
+    print(f"is native {isNative}")
+    print(f"flashloanlender {flashloanlender}")
+    print(f"flashloaned_token {flashloaned_token}")
+    return isNative, flashloanlender, flashloaned_token
+
+
+# def discord_bot_webhook(message):
+#   try:
+#     #test channel
+#     webhook = DiscordWebhook(url='https://discord.com/api/webhooks/914155708835049472/zCujeIgG9RF88yTRJxCZFV4ccrj1M5VZlaW7Rfw2djyHoxOQpTDlx7x8g_W7uofCMPl6', content=message)
+
+#     # main chanell
+#     # webhook = DiscordWebhook(url='https://discord.com/api/webhooks/913885231369568286/lavwyhLBnMT4Gz5maz41bm5MV2IiQycL0lwJ32RJ4sv5x4uFocpcFSyVgT1aWfxyW_n_', content=message)
+#     a = webhook.execute(remove_embeds=True)
+#   except Exception as e:
+#     print(f'webhook bot died because of {e}\nduring sending msg {message}')
