@@ -8,11 +8,3 @@ def notify(message):
     chat_id = keys_file['telegram_chat_id']    
     bot = telegram.Bot(token=token)
     bot.sendMessage(chat_id=chat_id, text=message)
-
-
-
-def main():
-    notify("aaa")
-
-
-main()
