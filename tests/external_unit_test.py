@@ -260,7 +260,14 @@ def test_Ownable_transfer_onlyOwner(contract1, account):
 
 
 def test_Ownable_renounce_onlyOwner(contract1, account):
-    new_owner = accounts[8]
     flashloanBorrowerr = contract1
     with reverts("Ownable: caller is not the owner"):
-        flashloanBorrowerr.renounceOwnership(new_owner, {'from': accounts[8]})
+        flashloanBorrowerr.renounceOwnership({'from': accounts[8]})
+
+
+def test_Ownable_transfer_to0(contract1, account):
+    new_owner = "0x0000000000000000000000000000000000000000"
+    flashloanBorrowerr = contract1
+    with reverts("Ownable: new owner is the zero address"):
+        flashloanBorrowerr.transferOwnership(new_owner, {'from': account})
+    assert flashloanBorrowerr.owner() == account

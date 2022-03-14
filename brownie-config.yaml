@@ -75,6 +75,9 @@ networks:
 wallets:
   from_key: ${PRIVATE_KEY}
 
+telegram:
+  token: ${TELEGRAM_TOKEN}
+  chat_ID: ${TELEGRAM_CHAT_ID}
 
 pytest:
     # these settings replace the defaults when running pytest

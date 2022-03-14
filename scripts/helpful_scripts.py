@@ -101,16 +101,16 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
         #print("{}: collamm {}, debtamm {}, tokenprice {}".format(
         #    token_name, collateral_amount, debt_amount, token_price))
 
-    print(address)
-    print(token_names)
-    print(token_prices)
-    print(debt_amounts)
-    print(collateral_amounts)
-    print(debt_usd_values)
-    print(collateral_usd_values)
+    # print(address)
+    # print(token_names)
+    # print(token_prices)
+    # print(debt_amounts)
+    # print(collateral_amounts)
+    # print(debt_usd_values)
+    # print(collateral_usd_values)
 
     print(  f"max borrow usd value: {max(debt_usd_values)} on index {debt_usd_values.index(max(debt_usd_values))}"
-            f"of coin {token_names[debt_usd_values.index(max(debt_usd_values))]}")
+            f" of coin {token_names[debt_usd_values.index(max(debt_usd_values))]}")
     
     max_debt_repaid = float(max(debt_usd_values))
     max_collateral_seized_usd = float(max(collateral_usd_values))
@@ -118,10 +118,10 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
     index_collateral = collateral_usd_values.index(max_collateral_seized_usd)
 
     if max_debt_repaid / 2 <= max_collateral_seized_usd:
-        # print(
-        #     f"repaying debt: {max_debt_repaid / 2} USD = {float(debt_amounts[index_debt]) / 2} of {token_names[index_debt]}")
-        # print(
-        #     f"seizing part of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
+        print(
+            f"repaying debt: {max_debt_repaid / 2} USD = {float(debt_amounts[index_debt]) / 2 * 0.95} of {token_names[index_debt]}")
+        print(
+            f"seizing PART of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
         return {'address': address,
                 'repay_amount': float(debt_amounts[index_debt]) / 2 * 0.95,
                 'repay_token': token_names[index_debt],
@@ -132,10 +132,11 @@ def choose_tokens_to_seize_and_repay(graph_account_data):
     elif max_debt_repaid / 2 > max_collateral_seized_usd:
         #Possible if 5+ collaterals against borrow concentrated in 1 asset
         #TODO maths too strong
-        # print(
-        #     f"repaying debt: {max_collateral_seized_usd*0.95} USD = {float((2* max_collateral_seized_usd/max_debt_repaid) * debt_amounts[index_debt]) * 0.95 } of {token_names[index_debt]}")
-        # print(
-        #     f"seizing PART of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
+        print(
+            f"repaying debt: {max_collateral_seized_usd*0.95} USD = "
+            f"{(float(max_collateral_seized_usd/max_debt_repaid) * float(debt_amounts[index_debt]) * 0.95)/2} of {token_names[index_debt]}")
+        print(
+            f"seizing PART of {max_collateral_seized_usd} USD = {collateral_amounts[index_collateral]} of {token_names[index_collateral]}")
         return {'address': address,
                 'repay_amount': (float(max_collateral_seized_usd/max_debt_repaid) * float(debt_amounts[index_debt]) * 0.95)/2,
                 'repay_token': token_names[index_debt],

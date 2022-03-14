@@ -11,7 +11,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/pecio222/repo_name">
+  <a href="https://github.com/pecio222/TJ_liquidation_bounty">
   </a>
 
 <h3 align="center">Liquidation Bot using Flash Loans</h3>
@@ -19,20 +19,19 @@
   <p align="center">
     My humble take on Liquidation Bot for Trader's Joe lending  
     <br />
-    <a href="https://github.com/pecio222/repo_name"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/pecio222/TJ_liquidation_bounty"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/pecio222/repo_name/issues">Report Bug</a>
+    <a href="https://github.com/pecio222/TJ_liquidation_bounty/issues">Report Bug</a>
     ·
-    <a href="https://github.com/pecio222/repo_name/issues">Request Feature</a>
+    <a href="https://github.com/pecio222/TJ_liquidation_bounty/issues">Request Feature</a>
   </p>
 </div>
 
 
 
 <!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
+<summary>Table of Contents</summary>
   <ol>
     <li>
       <a href="#about-the-project">About The Project</a>
@@ -48,7 +47,6 @@
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
     <li><a href="#tests">Tests</a></li>
     <li><a href="#flowcharts">Flowcharts</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -56,7 +54,7 @@
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
-</details>
+
 
 
 
@@ -70,9 +68,8 @@ It was fun. Exhausting, long, full of doubts, but fun :)
 
 In this repo you can find working solution. Not competitive, not fast, not safe, with issues, but.. working.
 
+As for now, repository is set to private. Probably will make it open after bounty resolution, but feel free to share anyway.
 
-
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `pecio222`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -83,6 +80,7 @@ Here's a blank template to get started: To avoid retyping too much info. Do a se
 * [Brownie](https://eth-brownie.readthedocs.io/)
 * [web3.py](https://web3py.readthedocs.io/en/stable/)
 * [Pytest](https://docs.pytest.org/en/7.1.x/)
+* [OpenZeppelin - Ownable](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol)
 * youtube&discord,
 * and a lot, lot of trial and error.
 
@@ -109,7 +107,7 @@ To get a local copy up and running follow these simple example steps.
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/pecio222/repo_name.git
+   git clone https://github.com/pecio222/TJ_liquidation_bounty.git
    ```
 2. Install dependencies
    ```sh
@@ -159,8 +157,18 @@ There are possible combinations, that will never go underwater (supplying tokens
 
 I suppose, that above procedure proves, that solution is correct and working.
 
-Above grants test coverage of 100%*, but still doesn't guarantee 100% safety and working in all environments, but gives some hope at least.
 
+
+Above grants test coverage of 97.5% as below, but still doesn't guarantee 100% safety and working in all environments, but gives some hope at least.
+```
+  contract: FlashloanBorrowerDev - 97.5%
+    FlashloanBorrowerDev.doFlashloan - 100.0%
+    FlashloanBorrowerDev.liquidate_borrow - 100.0%
+    FlashloanBorrowerDev.onFlashLoan - 100.0%
+    Ownable.transferOwnership - 75.0%
+```
+
+To be honest - I have no idea what I'm missing with transferOwnership. That said, feeling confident, that OpenZeppelin contracts are safe.
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -171,7 +179,7 @@ Above grants test coverage of 100%*, but still doesn't guarantee 100% safety and
 Graphical visualisation of provided Solidity code.
 Feel free to use comments inside code also.
 
-Less complicated and less detailed flowchart of FlashloanBorrowerDev.sol:
+1. Less complicated and less detailed flowchart of FlashloanBorrowerDev.sol:
 
 ```mermaid
 graph TD;
@@ -196,7 +204,7 @@ graph TD;
 ```
 
 
-Full flowchart of FlashloanBorrowerDev.sol:
+2. Full flowchart of FlashloanBorrowerDev.sol:
 
 ```mermaid
 graph TD;
@@ -246,9 +254,11 @@ graph TD;
     - Time goes by fast; code does not look like i wanted it to, should put few more days polishing existing features.
 - Analyzing existing bots
     - Analyze how fast they are. As far as i've seen, there is 1 bot dominating space, but didn't research enough to judge more.
+- Notifications/logging
+    - No idea why my previously-working-solutions-from-other-places decided to die today and stop collaboration. Easy to fix, probably.
 
 
-See the [open issues](https://github.com/pecio222/repo_name/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/pecio222/TJ_liquidation_bounty/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -293,7 +303,7 @@ Do what you want. If you find this useful, DM me. Would be happy to help.
 
 [Discord - pecio33#5843](https://discord.com/users/pecio33#5843/)
 
-Project Link: [https://github.com/pecio222/repo_name](https://github.com/pecio222/repo_name)
+Project Link: [https://github.com/pecio222/TJ_liquidation_bounty](https://github.com/pecio222/TJ_liquidation_bounty)
 
 If you want to talk about this repo, DM me, would be happy to know fellow wanna-be coder.
 

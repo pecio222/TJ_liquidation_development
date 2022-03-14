@@ -45,7 +45,7 @@ def main():
                                 * 10 ** config['addresses']['DECIMALS'][chosen_tokens['repay_token']])
         print(f"repaying amount: {repayAmount}")
         borrowed_token = config['addresses']['TOKENS'][chosen_tokens['repay_token']]
-        #interface??
+        contract_avax_balance_before = flashloanborrowerdev.balance()
         try:
             flashloan = flashloanborrowerdev.doFlashloan(
                 [flashloanlender,
@@ -63,32 +63,36 @@ def main():
             #print('flashloan info:')
             #print(flashloan.info())
             if 'LiquidateBorrow' in flashloan.events and 'my_success' in flashloan.events:
+                contract_avax_balance_after = flashloanborrowerdev.balance()
                 event0 = flashloan.events['LiquidateBorrow'][0]
-                print(flashloan.events['LiquidateBorrow'])
+                #print(flashloan.events['LiquidateBorrow'])
 
                 liquidator = event0['liquidator']
                 borrower = event0['borrower']
                 repayAmount = event0['repayAmount']
                 jTokenCollateral = event0['jTokenCollateral']
                 seizeTokens = event0['seizeTokens']
-                print(liquidator)
-                print(borrower)
-                print(repayAmount)
-                print(jTokenCollateral)
-                print(seizeTokens)
-                print("BIG SUCCESS EVERYONE HAPPY")
-                #discord_bot_webhook(liquidator + borrower + repayAmount + jTokenCollateral + seizeTokens)
+                profit = contract_avax_balance_after - contract_avax_balance_before
+                msg1 = f"liquidator: {liquidator}, borrower: {borrower}\n"
+                msg2 = f"repayAmount: {repayAmount * 10 ** (-config['addresses']['DECIMALS'][chosen_tokens['repay_token']])} of token {chosen_tokens['repay_token']}\n"
+                msg3 = f"seizeTokens: {seizeTokens * 10 ** (-config['addresses']['DECIMALS'][chosen_tokens['seize_token']])} of token {chosen_tokens['seize_token']}\n"
+                msg4 = f"profit: {profit * 10 ** (-18)} AVAX"
+                print(msg1)
+                print(msg2)
+                print(msg3)
+                print(msg4)
+                msg_notify = msg1 + msg2 + msg3 + msg4
+                #notify(msg_notify)
+                print("\nBIG SUCCESS EVERYONE HAPPY\n")
+
 
             else:
-                print("I'm hanging around \nI'm waiting for you \nBut nothing ever happens And I wonder")
+                print("I'm hanging around \nI'm waiting for you \nBut nothing ever happens And I wonder...")
 
         except Exception as e:
             print("Something bad happened. Pls don't burn my gas.")
-            print(e)
+            print(f"Exception {e}")
 
 
 
 
-if __name__ == "__main__":
-
-    main()
